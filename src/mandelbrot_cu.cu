@@ -1,11 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-void init(int argc, char *argv[])
-{
-    __device__ int gradient_size = 16;
-    __device__ int colors[17][3] = {
+    const int GRADIENT_SIZE = 16;
+    __const__ int d_gradient_size;
+    const int COLORS[17][3] = {
                             {66, 30, 15},
                             {25, 7, 26},
                             {9, 1, 47},
@@ -25,15 +23,21 @@ void init(int argc, char *argv[])
                             {16, 16, 16},
                         };
 
-    __device__ double c_x_min = -0.188;
-    __device__ double c_x_max = -0.012;
-    __device__ double c_y_min = 0.554;
-    __device__ double c_y_max = 0.754;
-    __device__ int image_size = 4096;
+    const double C_X_MIN = -0.188,
+                 C_X_MAX = -0.012,
+                 C_Y_MIN = 0.554,
+                 C_Y_MAX = 0.754;
+    __const__ double d_c_x_min,
+                     d_c_x_max,
+                     d_c_y_min,
+                     d_c_y_max;
 
-    __device__ int image_buffer_size = image_size * image_size;
-    __device__ double pixel_width  = (c_x_max - c_x_min) / image_size;
-    __device__ double pixel_height = (c_y_max - c_y_min) / image_size;
+    const int IMAGE_SIZE = 4096;
+    __const__ int d_image_size;
+
+void init(int argc, char *argv[])
+{
+    cudaMemcpyToSymbol(d_image_size, IMAGE_SIZE, sizeof(int));
 }
 
 __global__ void test()
@@ -44,5 +48,5 @@ __global__ void test()
 int main(int argc, char *argv[])
 {
     init(argc, argv);
-    test<<<1>>>();
+    test<<<1,1>>>();
 }
