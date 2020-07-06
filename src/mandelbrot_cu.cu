@@ -37,10 +37,10 @@ int colors[51] = {
                     };
 int *d_colors;
 
-const int x_grid;
-const int y_grid;
-const int x_block;
-const int y_block;
+int x_grid;
+int y_grid;
+int x_block;
+int y_block;
 dim3 dimGrid;
 dim3 dimBlock;
 
@@ -71,8 +71,8 @@ void init(int argc, char *argv[])
 void write_to_file()
 {
     FILE * file;
-    char * filename               = "output.ppm";
-    char * comment                = "# ";
+    const char *filename = "output.ppm";
+    const char *comment  = "# ";
 
     int max_color_component_value = 255;
 
@@ -103,12 +103,13 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
     int i_x = blockIdx.x * blockDim.x + threadIdx.x;
 
     int color;
+    int iteration;
 
     c_y = C_Y_MIN + i_y * PIXEL_HEIGHT;
     if (fabs(c_y) < PIXEL_HEIGHT / 2)
         c_y = 0.0;
     c_x = C_X_MIN + i_x * PIXEL_WIDTH;
-    for (int iteration = 0;
+    for (iteration = 0;
                 iteration < ITERATION_MAX && \
                 ((z_x_squared + z_y_squared) < escape_radius_squared);
                 iteration++) {
@@ -131,7 +132,7 @@ void compute_mandelbrot()
 
 int main(int argc, char *argv[])
 {
-    init();
+    init(argc, argv);
 
     compute_mandelbrot();
 
@@ -140,5 +141,6 @@ int main(int argc, char *argv[])
     cudaFreeHost(image_buffer); cudaFree(d_image_buffer);
     cudaFree(d_colors);
 
+    printf("Foi");
     return 0;
 }
