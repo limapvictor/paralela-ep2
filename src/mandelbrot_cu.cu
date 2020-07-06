@@ -9,7 +9,7 @@
 #define C_Y_MIN 0.554
 #define C_Y_MAX 0.754
 
-#define IMAGE_SIZE 4096
+#define IMAGE_SIZE 32
 #define ARRAY_SIZE (3 * IMAGE_SIZE * IMAGE_SIZE * sizeof(unsigned char)) 
 
 #define PIXEL_WIDTH ((C_X_MAX - C_X_MIN) / IMAGE_SIZE)
@@ -120,17 +120,23 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
                 z_y_squared = z_y * z_y;
     }
     color = (iteration == ITERATION_MAX) ? GRADIENT_SIZE : iteration % GRADIENT_SIZE;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++) {
         buffer[(IMAGE_SIZE * i_y) + i_x + i] = colors_d[color * 3 + i];
+    }
 }
 
 void compute_mandelbrot()
 {
+    for (int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++) {
+        for (int c = 0; c < 3; c++) {
+            printf("%i ", image_buffer[i * 3 + c]);
+        }
+    }
     gpu_compute_mandelbrot<<<dimGrid, dimBlock>>>(d_image_buffer, d_colors);
     cudaMemcpy(image_buffer, d_image_buffer, ARRAY_SIZE, cudaMemcpyDeviceToHost);
     for (int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++) {
         for (int c = 0; c < 3; c++) {
-            printf("%c ", image_buffer[i * 3 + 3]);
+            printf("%i ", image_buffer[i * 3 + c]);
         }
     }
 }
