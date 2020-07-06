@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-// #include "cuPrintf.cu"
-
 #define GRADIENT_SIZE 16
 
 #define C_X_MIN -0.188
@@ -107,7 +105,6 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
     int color;
     int iteration;
 
-    printf("ola\t");
     c_y = C_Y_MIN + i_y * PIXEL_HEIGHT;
     if (fabs(c_y) < PIXEL_HEIGHT / 2)
         c_y = 0.0;
@@ -118,11 +115,12 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
                 iteration++) {
                 z_y         = 2 * z_x * z_y + c_y;
                 z_x         = z_x_squared - z_y_squared + c_x;
-
                 z_x_squared = z_x * z_x;
                 z_y_squared = z_y * z_y;
     }
-    color = (iteration == ITERATION_MAX) ? GRADIENT_SIZE : iteration % GRADIENT_SIZE;
+    color = iteration == ITERATION_MAX ? GRADIENT_SIZE : iteration % GRADIENT_SIZE;
+    printf("%d %d %d\n", i_x, i_y, color);
+    return;
     for (int i = 0; i < 3; i++) {
         buffer[(IMAGE_SIZE * i_y) + i_x + i] = colors_d[color * 3 + i];
     }
@@ -130,10 +128,7 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
 
 void compute_mandelbrot()
 {
-    // cudaPrintfInit();
     gpu_compute_mandelbrot<<<dimGrid, dimBlock>>>(d_image_buffer, d_colors);
-    // cudaPrintfDisplay();
-    // cudaPrintfEnd();
     cudaMemcpy(image_buffer, d_image_buffer, ARRAY_SIZE, cudaMemcpyDeviceToHost);
     for (int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++) {
         for (int c = 0; c < 3; c++) {
