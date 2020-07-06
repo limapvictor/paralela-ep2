@@ -9,7 +9,7 @@
 #define C_Y_MIN 0.554
 #define C_Y_MAX 0.754
 
-#define IMAGE_SIZE 32
+#define IMAGE_SIZE 4096
 #define ARRAY_SIZE (3 * IMAGE_SIZE * IMAGE_SIZE * sizeof(unsigned char)) 
 
 #define PIXEL_WIDTH ((C_X_MAX - C_X_MIN) / IMAGE_SIZE)
@@ -51,10 +51,10 @@ void init(int argc, char *argv[])
         printf("usage: ./mandelbrot_cu x_grid y_grid x_blocks y_blocks");
         exit(0);
     } 
-    sscanf(argv[1], "%lf", &x_grid);
-    sscanf(argv[2], "%lf", &y_grid);
-    sscanf(argv[3], "%lf", &x_block);
-    sscanf(argv[4], "%lf", &y_block);
+    sscanf(argv[1], "%d", &x_grid);
+    sscanf(argv[2], "%d", &y_grid);
+    sscanf(argv[3], "%d", &x_block);
+    sscanf(argv[4], "%d", &y_block);
 
     cudaMallocHost((void **) &image_buffer, ARRAY_SIZE);
     cudaMalloc((void **) &d_image_buffer, ARRAY_SIZE);
@@ -117,7 +117,6 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
     for (int i = 0; i < 3; i++) {
         buffer[(IMAGE_SIZE * i_y) + i_x + i] = colors_d[(color * 3) + i];
     }
-    printf("foi??");
 }
 
 void compute_mandelbrot()
@@ -125,11 +124,6 @@ void compute_mandelbrot()
     gpu_compute_mandelbrot<<<dim3(x_grid, y_grid), dim3(x_block, y_block)>>>(d_image_buffer, d_colors);
     cudaDeviceSynchronize();
     cudaMemcpy(image_buffer, d_image_buffer, ARRAY_SIZE, cudaMemcpyDeviceToHost);
-    for (int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++) {
-        for (int c = 0; c < 3; c++) {
-            printf("%d ", image_buffer[i * 3 + c]);
-        }
-    }
 }
 
 int main(int argc, char *argv[])
