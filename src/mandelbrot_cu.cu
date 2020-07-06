@@ -41,8 +41,6 @@ int x_grid;
 int y_grid;
 int x_block;
 int y_block;
-dim3 dimGrid;
-dim3 dimBlock;
 
 unsigned char *image_buffer;
 unsigned char *d_image_buffer;
@@ -63,9 +61,6 @@ void init(int argc, char *argv[])
 
     cudaMalloc((void **) &d_colors, 51 * sizeof(int));
     cudaMemcpy(d_colors, colors, 51 * sizeof(int), cudaMemcpyHostToDevice);
-
-    dimGrid = dim3(x_grid, y_grid, 1);
-    dimBlock = dim3(x_block, y_block, 1);
 }
 
 void write_to_file()
@@ -118,21 +113,21 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
                 z_x_squared = z_x * z_x;
                 z_y_squared = z_y * z_y;
     }
-    color = iteration == ITERATION_MAX ? GRADIENT_SIZE : iteration % GRADIENT_SIZE;
-    printf("%d %d %d\n", i_x, i_y, color);
-    return;
+    color = (iteration == ITERATION_MAX) ? GRADIENT_SIZE : (iteration % GRADIENT_SIZE);
     for (int i = 0; i < 3; i++) {
-        buffer[(IMAGE_SIZE * i_y) + i_x + i] = colors_d[color * 3 + i];
+        buffer[(IMAGE_SIZE * i_y) + i_x + i] = colors_d[(color * 3) + i];
     }
+    printf("foi??");
 }
 
 void compute_mandelbrot()
 {
-    gpu_compute_mandelbrot<<<dimGrid, dimBlock>>>(d_image_buffer, d_colors);
+    gpu_compute_mandelbrot<<<dim3(x_grid, y_grid), dim3(x_block, y_block)>>>(d_image_buffer, d_colors);
+    cudaDeviceSynchronize();
     cudaMemcpy(image_buffer, d_image_buffer, ARRAY_SIZE, cudaMemcpyDeviceToHost);
     for (int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++) {
         for (int c = 0; c < 3; c++) {
-            printf("%i ", image_buffer[i * 3 + c]);
+            printf("%d ", image_buffer[i * 3 + c]);
         }
     }
 }
