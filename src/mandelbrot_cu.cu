@@ -81,8 +81,8 @@ void write_to_file()
     fprintf(file, "P6\n %s\n %d\n %d\n %d\n", comment,
             IMAGE_SIZE, IMAGE_SIZE, max_color_component_value);
 
-    for(int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i += 3){
-        fwrite(&image_buffer[i], 1 , 3, file);
+    for(int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++){
+        fwrite(&image_buffer[3 * i], 1 , 3, file);
     };
 
     fclose(file);
@@ -128,6 +128,11 @@ void compute_mandelbrot()
 {
     gpu_compute_mandelbrot<<<dimGrid, dimBlock>>>(d_image_buffer, d_colors);
     cudaMemcpy(image_buffer, d_image_buffer, ARRAY_SIZE, cudaMemcpyDeviceToHost);
+    for (int i = 0; i < IMAGE_SIZE * IMAGE_SIZE; i++) {
+        for (int c = 0; c < 3; c++) {
+            printf("%c ", image_buffer[i * 3 + 3]);
+        }
+    }
 }
 
 int main(int argc, char *argv[])
