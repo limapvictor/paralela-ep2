@@ -45,6 +45,10 @@ int y_block;
 unsigned char *image_buffer;
 unsigned char *d_image_buffer;
 
+cudaEvent_t allocation_start, allocation_end;
+cudaEvent_t computing_start, computing_end;
+float allocation_time, computing_time;
+
 void init(int argc, char *argv[])
 {
     if (argc != 5) {
@@ -56,11 +60,18 @@ void init(int argc, char *argv[])
     sscanf(argv[3], "%d", &x_block);
     sscanf(argv[4], "%d", &y_block);
 
+    cudaEventCreate(&allocation_start); cudaEventCreate(&allocation_end); 
+    cudaEventCreate(&computing_start); cudaEventCreate(&computing_end); 
+
+    cudaEventRecord(allocation_start, 0);
+
     cudaMallocHost((void **) &image_buffer, ARRAY_SIZE);
     cudaMalloc((void **) &d_image_buffer, ARRAY_SIZE);
 
     cudaMalloc((void **) &d_colors, 51 * sizeof(int));
     cudaMemcpy(d_colors, colors, 51 * sizeof(int), cudaMemcpyHostToDevice);
+    
+    cudaEventRecord(allocation_end, 0);
 }
 
 void write_to_file()
@@ -115,7 +126,7 @@ __global__ void gpu_compute_mandelbrot(unsigned char *buffer, int *colors_d)
     }
     color = (iteration == ITERATION_MAX) ? GRADIENT_SIZE : (iteration % GRADIENT_SIZE);
     for (int i = 0; i < 3; i++) {
-        buffer[(IMAGE_SIZE * i_y) + i_x + i] = colors_d[(color * 3) + i];
+        buffer[3 * ((IMAGE_SIZE * i_y) + i_x) + i] = colors_d[(3 * color) + i];
     }
 }
 
@@ -130,13 +141,18 @@ int main(int argc, char *argv[])
 {
     init(argc, argv);
 
+    cudaEventRecord(computing_start, 0);
     compute_mandelbrot();
+    cudaEventRecord(computing_end, 0);
 
     write_to_file();
 
     cudaFreeHost(image_buffer); cudaFree(d_image_buffer);
     cudaFree(d_colors);
 
-    printf("Foi");
+    cudaEventElapsedTime(&allocation_time, allocation_start, allocation_end);
+    cudaEventElapsedTime(&computing_time, computing_start, computing_end);
+
+    printf("Allocation Time = %.6f\tComputing Time = %.6f\n", allocation_time, computing_time);
     return 0;
 }
