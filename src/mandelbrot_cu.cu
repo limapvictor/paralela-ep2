@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <time.h>
-#include <sys/time.h>
 
 #define GRADIENT_SIZE 16
 
@@ -49,18 +47,8 @@ unsigned char *d_image_buffer;
 
 cudaEvent_t allocation_start, allocation_end;
 cudaEvent_t computing_start, computing_end;
-float allocation_time, computing_time;
-
-struct timer_info {
-    clock_t c_start;
-    clock_t c_end;
-    struct timespec t_start;
-    struct timespec t_end;
-    struct timeval v_start;
-    struct timeval v_end;
-};
-
-struct timer_info computing_timer;
+cudaEvent_t memcpy_start, memcpy_end;
+float allocation_time, computing_time, memcpy_time;
 
 void init(int argc, char *argv[])
 {
@@ -75,6 +63,7 @@ void init(int argc, char *argv[])
 
     cudaEventCreate(&allocation_start); cudaEventCreate(&allocation_end); 
     cudaEventCreate(&computing_start); cudaEventCreate(&computing_end); 
+    cudaEventCreate(&memcpy_start); cudaEventCreate(&memcpy_end); 
 
     cudaEventRecord(allocation_start, 0);
 
@@ -147,21 +136,9 @@ void compute_mandelbrot()
 {
     gpu_compute_mandelbrot<<<dim3(x_grid, y_grid), dim3(x_block, y_block)>>>(d_image_buffer, d_colors);
     cudaDeviceSynchronize();
+    cudaEventRecord(memcpy_start, 0);
     cudaMemcpy(image_buffer, d_image_buffer, ARRAY_SIZE, cudaMemcpyDeviceToHost);
-}
-
-void start_timer(struct timer_info *timer_pointer) 
-{
-    timer_pointer->c_start = clock();
-    clock_gettime(CLOCK_MONOTONIC, &timer_pointer->t_start);
-    gettimeofday(&timer_pointer->v_start, NULL);
-}
-
-void finish_timer(struct timer_info *timer_pointer)
-{
-    timer_pointer->c_end = clock();
-    clock_gettime(CLOCK_MONOTONIC, &timer_pointer->t_end);
-    gettimeofday(&timer_pointer->v_end, NULL);
+    cudaEventRecord(memcpy_end, 0);
 }
 
 int main(int argc, char *argv[])
@@ -169,9 +146,7 @@ int main(int argc, char *argv[])
     init(argc, argv);
 
     cudaEventRecord(computing_start, 0);
-    start_timer(&computing_timer);
     compute_mandelbrot();
-    finish_timer(&computing_timer);
     cudaEventRecord(computing_end, 0);
 
     write_to_file();
@@ -181,10 +156,8 @@ int main(int argc, char *argv[])
 
     cudaEventElapsedTime(&allocation_time, allocation_start, allocation_end);
     cudaEventElapsedTime(&computing_time, computing_start, computing_end);
+    cudaEventElapsedTime(&memcpy_time, memcpy_start, memcpy_end);
 
-    printf("Allocation Time = %.6f\tComputing Time = %.6f\n", allocation_time, computing_time);
-    printf("Computing timer test = %f\n",
-            (double) (program_timer.t_end.tv_sec - program_timer.t_start.tv_sec) +
-            (double) (program_timer.t_end.tv_nsec - program_timer.t_start.tv_nsec) / 1000000000.0);
+    printf("%.6f %.6f %.6f\n", allocation_time, computing_time, memcpy_time);
     return 0;
 }
