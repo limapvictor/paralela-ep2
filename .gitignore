@@ -1,2 +1,5 @@
 .vscode/
 img/
+mandelbrot_*
+!*.c
+!*.cu
