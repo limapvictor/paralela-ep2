@@ -3,3 +3,4 @@ img/
 mandelbrot_*
 !*.c
 !*.cu
+*.ppm

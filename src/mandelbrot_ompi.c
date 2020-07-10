@@ -47,9 +47,7 @@ int taskid;
 
 int task_y_offset;
 
-#define TAG_ID 0
 #define TAG_ARRAY 1
-
 
 void init()
 {
@@ -132,12 +130,13 @@ int main(int argc, char *argv[])
 {
     int msg_dest, msg_src;
     double program_start, program_finish;
+    double program_time, task_program_time;
     MPI_Status status;
     
     MPI_Init(&argc, &argv);
-    program_start = MPI_Wtime();
     init();
 
+    program_start = MPI_Wtime();
     compute_mandelbrot();
 
     if (taskid != MASTER) {
@@ -152,10 +151,14 @@ int main(int argc, char *argv[])
         write_to_file();
     }
 
+    program_finish = MPI_Wtime();
     deallocate_image_buffer();
 
-    program_finish = MPI_Wtime();
+    task_program_time = program_finish - program_start;
+    MPI_Reduce(&task_program_time, &program_time, 1, MPI_DOUBLE, MPI_MAX, MASTER, MPI_COMM_WORLD);
+    
     MPI_Finalize();
 
-    // printf("%.8f", program_start - program_finish);
+    if (taskid == MASTER)
+        printf("%.6f\t", program_time);
 }
