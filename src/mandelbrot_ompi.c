@@ -160,5 +160,6 @@ int main(int argc, char *argv[])
     MPI_Finalize();
 
     if (taskid == MASTER)
-        printf("%.6f\t", program_time);
+        printf("%.6f\n", program_time);
+    return 0;
 }

@@ -158,6 +158,6 @@ int main(int argc, char *argv[])
     cudaEventElapsedTime(&computing_time, computing_start, computing_end);
     cudaEventElapsedTime(&memcpy_time, memcpy_start, memcpy_end);
 
-    printf("%.6f %.6f %.6f\n", allocation_time, computing_time, memcpy_time);
+    printf("%.6f\n", computing_time / 1000.0);
     return 0;
 }

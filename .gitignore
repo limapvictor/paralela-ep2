@@ -4,3 +4,4 @@ mandelbrot_*
 !*.c
 !*.cu
 *.ppm
+*.ipynb_checkpoints
