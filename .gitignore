@@ -1,7 +1,10 @@
 .vscode/
 img/
+EP2/
 mandelbrot_*
 !*.c
 !*.cu
 *.ppm
 *.ipynb_checkpoints
+*.csv
+*.log
